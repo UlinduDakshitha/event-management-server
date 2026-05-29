@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.models import VisitorInput
+from app.services.matcher import find_best_session
 
 app = FastAPI(
     title="Event Assistant API",
@@ -15,9 +16,12 @@ def home():
 
 @app.post("/submit")
 def submit_form(data: VisitorInput):
+    matched_session = find_best_session(data.professional_focus)
+
     return {
         "message": "Form received successfully",
         "name": data.name,
         "email": data.email,
         "professional_focus": data.professional_focus,
+        "matched_session": matched_session,
     }
