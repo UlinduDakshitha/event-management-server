@@ -1,75 +1,77 @@
+from pathlib import Path
 import re
+from typing import Any, Dict, List
 
-def parse_agenda_file(filepath):
-    with open(filepath, "r", encoding="utf-8") as file:
-        content = file.read()
+
+AGENDA_PATH = Path(__file__).resolve().parents[2] / "agenda.txt"
+
+SESSION_PATTERN = re.compile(
+    r"\[(SESSION_\d+)\]\s*"
+    r"Time:\s*(.*?)\s*"
+    r"Title:\s*(.*?)\s*"
+    r"Speaker:\s*(.*?)\s*"
+    r"Focus Keywords:\s*(.*?)\s*"
+    r"Description:\s*(.*?)(?=\n\s*\n\[SESSION_|\Z)",
+    re.DOTALL,
+)
+
+
+def load_agenda_sessions() -> List[Dict[str, Any]]:
+    text = AGENDA_PATH.read_text(encoding="utf-8")
 
     sessions = []
+    for match in SESSION_PATTERN.finditer(text):
+        session_id, time, title, speaker, keywords_text, description = match.groups()
 
-    blocks = re.split(
-        r"\n(?=\[SESSION_\d+\])",
-        content
-    )
+        keywords = [
+            kw.strip().lower()
+            for kw in keywords_text.split(",")
+            if kw.strip()
+        ]
 
-    for block in blocks:
-
-        if "[SESSION_" not in block:
-            continue
-
-        session = {}
-
-        time_match = re.search(
-            r"Time:\s*(.+)",
-            block
+        sessions.append(
+            {
+                "id": session_id,
+                "time": time.strip(),
+                "title": title.strip(),
+                "speaker": speaker.strip(),
+                "keywords": keywords,
+                "description": description.strip(),
+            }
         )
 
-        title_match = re.search(
-            r"Title:\s*(.+)",
-            block
-        )
+    return sessions
 
-        speaker_match = re.search(
-            r"Speaker:\s*(.+)",
-            block
-        )
 
-        keywords_match = re.search(
-            r"Focus Keywords:\s*(.+)",
-            block
-        )
+def parse_agenda_file(filepath: str | None = None):
+    if filepath is None:
+        return load_agenda_sessions()
 
-        desc_match = re.search(
-            r"Description:\s*(.+)",
-            block,
-            re.DOTALL
-        )
+    path = Path(filepath)
+    if path.resolve() == AGENDA_PATH.resolve():
+        return load_agenda_sessions()
 
-        session["time"] = (
-            time_match.group(1).strip()
-            if time_match else ""
-        )
+    text = path.read_text(encoding="utf-8")
 
-        session["title"] = (
-            title_match.group(1).strip()
-            if title_match else ""
-        )
+    sessions = []
+    for match in SESSION_PATTERN.finditer(text):
+        session_id, time, title, speaker, keywords_text, description = match.groups()
 
-        session["speaker"] = (
-            speaker_match.group(1).strip()
-            if speaker_match else ""
-        )
+        keywords = [
+            kw.strip().lower()
+            for kw in keywords_text.split(",")
+            if kw.strip()
+        ]
 
-        session["keywords"] = (
-            [k.strip().lower()
-             for k in keywords_match.group(1).split(",")]
-            if keywords_match else []
+        sessions.append(
+            {
+                "id": session_id,
+                "time": time.strip(),
+                "title": title.strip(),
+                "speaker": speaker.strip(),
+                "keywords": keywords,
+                "description": description.strip(),
+            }
         )
-
-        session["description"] = (
-            desc_match.group(1).strip()
-            if desc_match else ""
-        )
-
-        sessions.append(session)
 
     return sessions
