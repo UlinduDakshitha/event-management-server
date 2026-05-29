@@ -1,8 +1,10 @@
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from app.models import VisitorInput
 from app.services.agenda_parser import parse_agenda_file
+from app.services.ai_generator import generate_email_draft
 from app.services.matcher import DEFAULT_SESSIONS, find_best_session
 from app.services.mcp import send_draft_via_mcp
 from app.services.prompt_builder import build_invitation_prompt
@@ -11,6 +13,19 @@ app = FastAPI(
     title="Event Assistant API",
     description="API for matching visitor interests with agenda sessions",
     version="1.0.0",
+)
+
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 AGENDA_FILE = Path(__file__).resolve().parent.parent / "agenda.txt"
@@ -70,21 +85,7 @@ def generate_draft(data: VisitorInput):
             professional_focus=data.professional_focus,
             matched_session=best_session,
         )
-
-        draft_email = f"""
-Dear {data.name},
-
-We would be delighted to invite you to explore:
-{best_session.get("title")}
-
-Time: {best_session.get("time")}
-Speaker: {best_session.get("speaker")}
-
-This session aligns with your interest in {data.professional_focus}.
-
-Best regards,
-Event Team
-"""
+        draft_email = generate_email_draft(prompt)
 
         send_draft_via_mcp(data.email, draft_email)
 
@@ -97,3 +98,5 @@ Event Team
         }
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="agenda.txt file not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
