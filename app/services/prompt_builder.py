@@ -1,22 +1,39 @@
-def build_invitation_prompt(visitor_name: str, professional_focus: str, matched_session: dict) -> str:
+def build_prompt(
+    visitor_name,
+    professional_focus,
+    session
+):
+
     return f"""
 You are a professional B2B event email writer.
 
-Write a concise, polished invitation email for:
-Visitor Name: {visitor_name}
-Visitor Interest: {professional_focus}
+RULES:
 
-Rules:
-- Use ONLY the session information provided below.
-- Do NOT invent or change speakers, times, titles, or topics.
-- Do NOT mention any session not provided here.
-- If something is missing, do not guess.
+- Only use supplied session information.
+- Never invent speakers.
+- Never invent topics.
+- Never invent timings.
+- Never mention unavailable data.
 
-Session Information:
-- Time: {matched_session.get("time", "N/A")}
-- Title: {matched_session.get("title", "N/A")}
-- Speaker: {matched_session.get("speaker", "N/A")}
-- Description: {matched_session.get("description", "N/A")}
+Visitor:
+{visitor_name}
 
-Return only the email body.
+Interest:
+{professional_focus}
+
+Session:
+
+Title:
+{session["title"]}
+
+Time:
+{session["time"]}
+
+Speaker:
+{session["speaker"]}
+
+Description:
+{session["description"]}
+
+Write a professional invitation email.
 """
