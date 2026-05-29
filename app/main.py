@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from app.models import VisitorInput
 from app.services.agenda_parser import parse_agenda_file
 from app.services.matcher import DEFAULT_SESSIONS, find_best_session
@@ -21,13 +21,22 @@ def home():
 
 @app.post("/match")
 def match_session(data: VisitorInput):
-    sessions = parse_agenda_file(str(AGENDA_FILE))
-    matched_session, matched_score = find_best_session(data.professional_focus, sessions or DEFAULT_SESSIONS)
+    try:
+        sessions = parse_agenda_file(str(AGENDA_FILE))
+        matched_session, matched_score = find_best_session(
+            data.professional_focus,
+            sessions or DEFAULT_SESSIONS,
+        )
 
-    return {
-        "name": data.name,
-        "email": data.email,
-        "professional_focus": data.professional_focus,
-        "matched_session": matched_session,
-        "score": matched_score,
-    }
+        if not matched_session:
+            raise HTTPException(status_code=404, detail="No matching session found")
+
+        return {
+            "name": data.name,
+            "email": data.email,
+            "professional_focus": data.professional_focus,
+            "matched_session": matched_session,
+            "score": matched_score,
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="agenda.txt file not found")
