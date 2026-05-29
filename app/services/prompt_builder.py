@@ -1,15 +1,14 @@
 def build_prompt(name: str, professional_focus: str, matched_session: str) -> str:
     return f"""
-You are a professional B2B email writer.
+Write a professional B2B invitation email.
 
-Write a polished invitation email for:
-- Name: {name}
-- Professional focus: {professional_focus}
-- Matched session: {matched_session}
+Visitor Name: {name}
+Visitor Focus: {professional_focus}
+Matched Session: {matched_session}
 
 Rules:
-- Use only the matched session information.
-- Do not invent fake topics, times, or speakers.
-- Keep the tone professional and concise.
-- Do not mention anything that is not grounded in the given session.
+- Use only the matched session details.
+- Do not invent fake topics, times, speakers, or agenda items.
+- Keep it concise, polished, and corporate.
+- The email must sound personalized and relevant.
 """

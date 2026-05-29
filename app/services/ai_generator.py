@@ -1,14 +1,19 @@
-def generate_email(prompt: str) -> str:
-    return f"""Dear Visitor,
+from openai import OpenAI
 
-Thank you for your interest in our event.
+from app.core.config import OPENAI_API_KEY
 
-Based on your profile, we recommend the most relevant session in the agenda.
-
-Best regards,
-Event Team
-"""
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def generate_email_draft(prompt: str) -> str:
-    return generate_email(prompt)
+    response = client.responses.create(
+        model="gpt-5.5",
+        instructions=(
+            "You are a professional B2B invitation email writer. "
+            "Use only the provided agenda information. "
+            "Do not invent speakers, times, topics, or session details."
+        ),
+        input=prompt,
+    )
+
+    return response.output_text

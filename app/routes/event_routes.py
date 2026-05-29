@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.schemas.response import EventResponse
 from app.schemas.visitor import VisitorInput
@@ -26,19 +26,21 @@ def submit_form(data: VisitorInput):
 	matched_session, _ = find_best_session(data.professional_focus, sessions)
 
 	if not matched_session:
-		return EventResponse(
-			status="failed",
-			matched_session=None,
-			draft_email="No matching session found",
-		)
+		raise HTTPException(status_code=404, detail="No matching session found")
 
-	prompt = build_prompt(data.name, data.professional_focus, matched_session)
+	session_summary = (
+		f"{matched_session.get('title', 'N/A')} | "
+		f"Time: {matched_session.get('time', 'N/A')} | "
+		f"Speaker: {matched_session.get('speaker', 'N/A')}"
+	)
+
+	prompt = build_prompt(data.name, data.professional_focus, session_summary)
 	draft_email = generate_email_draft(prompt)
 
 	send_draft_via_mcp(data.email, draft_email)
 
 	return EventResponse(
 		status="success",
-		matched_session=matched_session,
+		matched_session=session_summary,
 		draft_email=draft_email,
 	)
