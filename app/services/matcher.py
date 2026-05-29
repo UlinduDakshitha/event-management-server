@@ -1,50 +1,70 @@
-from typing import Optional, Dict
+from typing import Any
 
 
-def find_best_session(professional_focus: str) -> Optional[Dict]:
-    """Return a simple best-match session dict based on `professional_focus` text.
+DEFAULT_SESSIONS: list[dict[str, Any]] = [
+    {
+        "id": "SESSION_5",
+        "title": "The Resilient Supply Chain & SCM Innovations",
+        "description": "AI, automation, and predictive approaches for supply chain resilience.",
+        "keywords": ["ai", "automation", "predictive", "supply chain", "scm"],
+    },
+    {
+        "id": "SESSION_3",
+        "title": "Industry Keynote",
+        "description": "Outlook and challenges on digital logistics and supply chain.",
+        "keywords": ["logistics", "digital", "transportation", "supply chain"],
+    },
+    {
+        "id": "SESSION_4",
+        "title": "A Practical Guide to Successful Implementation",
+        "description": "Implementation, integration, and deployment guidance.",
+        "keywords": ["implementation", "integration", "deployment"],
+    },
+    {
+        "id": "SESSION_8",
+        "title": "Strategies in Action: Insights from Industry Leaders",
+        "description": "Leadership, panel, and case study perspectives.",
+        "keywords": ["leadership", "panel", "case study"],
+    },
+    {
+        "id": "SESSION_7",
+        "title": "Insights from Digital Evolution",
+        "description": "Broad digital transformation themes and trends.",
+        "keywords": ["digital", "evolution", "transformation"],
+    },
+]
 
-    This is a lightweight placeholder matcher: it checks for keywords in a
-    small static sessions list and returns the first reasonable match.
-    """
-    if not professional_focus:
-        return None
 
-    query = professional_focus.lower()
-
-    sessions = [
-        {"title": "AI in Healthcare", "tags": ["ai", "healthcare", "ml"]},
-        {"title": "Modern Web Development", "tags": ["web", "javascript", "frontend", "backend"]},
-        {"title": "Data Engineering", "tags": ["data", "etl", "pipeline"]},
-    ]
-
-    # direct tag match
-    for s in sessions:
-        for tag in s["tags"]:
-            if tag in query:
-                return s
-
-    # title word match
-    for s in sessions:
-        for word in s["title"].lower().split():
-            if word in query:
-                return s
-
-    # fallback: return the first session
-    return sessions[0]
-def find_best_session(user_text: str) -> str:
+def score_session(user_text: str, session: dict) -> int:
     text = user_text.lower()
+    score = 0
 
-    if "ai" in text or "automation" in text or "predictive" in text:
-        return "SESSION_5 - The Resilient Supply Chain & SCM Innovations"
+    title = session.get("title", "").lower()
+    description = session.get("description", "").lower()
+    keywords = session.get("keywords", [])
 
-    if "logistics" in text or "digital" in text or "transportation" in text:
-        return "SESSION_3 - Industry Keynote (Outlook & Challenges on Digital Logistics & Supply Chain)"
+    for keyword in keywords:
+        if keyword in text:
+            score += 3
 
-    if "implementation" in text or "integration" in text or "deployment" in text:
-        return "SESSION_4 - A Practical Guide to Successful Implementation"
+    if any(word in text for word in title.split()):
+        score += 2
 
-    if "leadership" in text or "panel" in text or "case study" in text:
-        return "SESSION_8 - Strategies in Action: Insights from Industry Leaders"
+    if any(word in text for word in description.split()):
+        score += 1
 
-    return "SESSION_7 - Insights from Digital Evolution"
+    return score
+
+
+def find_best_session(user_text: str, sessions: list[dict[str, Any]] | None = None):
+    sessions = sessions or DEFAULT_SESSIONS
+    best_session = None
+    best_score = -1
+
+    for session in sessions:
+        score = score_session(user_text, session)
+        if score > best_score:
+            best_score = score
+            best_session = session
+
+    return best_session, best_score
